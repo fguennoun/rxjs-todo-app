@@ -1,12 +1,13 @@
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { TodoList } from "./components/todo-list/todo-list";
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
-  templateUrl: './app.html',
-  styleUrl: './app.css'
+  template: '<app-todo-list></app-todo-list>',
+  styles: [],
+  imports: [TodoList]
 })
-export class App {
-  protected title = 'rxjs-todo-app';
+export class AppComponent {
+  title = 'rxjs-todo-app';
 }

@@ -1,0 +1,109 @@
+<div class="container">
+  <!-- Header -->
+  <div class="header">
+    <h1>📝 Todo App - RxJS Demo</h1>
+    <button (click)="onRefresh()" class="btn-refresh">
+      <span>🔄</span> Recharger
+    </button>
+  </div>
+
+  <!-- Concepts démontrés -->
+  <div class="concepts-box">
+    <h3>🎯 Concepts RxJS démontrés</h3>
+    <div class="concepts-grid">
+      <span>forkJoin</span>
+      <span>debounceTime</span>
+      <span>filter</span>
+      <span>switchMap</span>
+      <span>combineLatest</span>
+      <span>catchError</span>
+      <span>tap</span>
+      <span>retry</span>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading$ | async" class="loading">
+    <div class="spinner"></div>
+    <p>Chargement des données (forkJoin)...</p>
+  </div>
+
+  <!-- Filtres -->
+  <div *ngIf="!(loading$ | async)" class="filters">
+    <!-- Recherche -->
+    <div class="search-box">
+      <input
+        type="text"
+        [formControl]="searchControl"
+        placeholder="Rechercher un todo... (debounceTime 300ms)"
+      />
+    </div>
+
+    <!-- Filtres -->
+    <div class="filter-grid">
+      <div>
+        <label>Statut</label>
+        <select [formControl]="statusControl">
+          <option value="all">Tous</option>
+          <option value="active">Actifs</option>
+          <option value="completed">Complétés</option>
+        </select>
+      </div>
+
+      <div>
+        <label>Utilisateur</label>
+        <select [formControl]="userControl">
+          <option value="all">Tous les utilisateurs</option>
+          <option *ngFor="let user of users$ | async" [value]="user.id">
+            {{ user.name }}
+          </option>
+        </select>
+      </div>
+
+      <div>
+        <label>Statistiques</label>
+        <div class="stats" *ngIf="stats$ | async as stats">
+          <div class="stat-completed">✓ {{ stats.completed }}</div>
+          <div class="stat-active">○ {{ stats.active }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Résultats -->
+  <div *ngIf="!(loading$ | async)" class="results-count">
+    <p *ngIf="filteredTodos$ | async as todos">
+      <strong>{{ todos.length }}</strong> résultat(s) trouvé(s)
+    </p>
+  </div>
+
+  <!-- Liste des todos -->
+  <div *ngIf="!(loading$ | async)" class="todo-list">
+    <div
+      *ngFor="let todo of filteredTodos$ | async"
+      class="todo-item"
+      (click)="onToggleTodo(todo.id)"
+    >
+      <div class="todo-checkbox">
+        <span *ngIf="todo.completed" class="checked">✓</span>
+        <span *ngIf="!todo.completed" class="unchecked">○</span>
+      </div>
+
+      <div class="todo-content">
+        <p [class.completed]="todo.completed">{{ todo.title }}</p>
+        <small>
+          👤 {{ getUserName(todo.userId) | async }} • ID: {{ todo.id }}
+        </small>
+      </div>
+
+      <div class="todo-status">
+        <span *ngIf="todo.completed" class="badge-completed">Complété</span>
+        <span *ngIf="!todo.completed" class="badge-active">En cours</span>
+      </div>
+    </div>
+
+    <div *ngIf="(filteredTodos$ | async)?.length === 0" class="empty-state">
+      Aucun todo trouvé avec ces filtres
+    </div>
+  </div>
+</div>
