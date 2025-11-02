@@ -19,7 +19,25 @@
       <span>catchError</span>
       <span>tap</span>
       <span>retry</span>
+      <span>CRUD complet</span>
     </div>
+  </div>
+
+  <!-- Formulaire d'ajout -->
+  <div *ngIf="!(loading$ | async)" class="add-todo-form">
+    <h3>➕ Ajouter un nouveau todo</h3>
+    <div class="add-todo-input-group">
+      <input
+        type="text"
+        [formControl]="newTodoControl"
+        placeholder="Titre du nouveau todo..."
+        (keyup.enter)="onAddTodo()"
+      />
+      <button (click)="onAddTodo()" class="btn-add">Ajouter</button>
+    </div>
+    <small class="info-text">
+      💡 Note : JSONPlaceholder simule l'ajout (pas de persistance réelle)
+    </small>
   </div>
 
   <!-- Loading -->
@@ -54,7 +72,7 @@
         <label>Utilisateur</label>
         <select [formControl]="userControl">
           <option value="all">Tous les utilisateurs</option>
-          <option *ngFor="let user of users$ | async" [value]="user.id">
+          <option *ngFor="let user of (users$ | async)" [value]="user.id">
             {{ user.name }}
           </option>
         </select>
@@ -71,10 +89,8 @@
   </div>
 
   <!-- Résultats -->
-  <div *ngIf="!(loading$ | async)" class="results-count">
-    <p *ngIf="filteredTodos$ | async as todos">
-      <strong>{{ todos.length }}</strong> résultat(s) trouvé(s)
-    </p>
+  <div *ngIf="!(loading$ | async) && (filteredTodos$ | async) as todos" class="results-count">
+    <strong>📊 {{ todos.length }}</strong> résultat(s)
   </div>
 
   <!-- Liste des todos -->
@@ -82,23 +98,50 @@
     <div
       *ngFor="let todo of filteredTodos$ | async"
       class="todo-item"
-      (click)="onToggleTodo(todo.id)"
+      [class.editing]="editingTodoId === todo.id"
     >
-      <div class="todo-checkbox">
-        <span *ngIf="todo.completed" class="checked">✓</span>
-        <span *ngIf="!todo.completed" class="unchecked">○</span>
+      <!-- Mode édition -->
+      <div *ngIf="editingTodoId === todo.id" class="edit-mode">
+        <input
+          type="text"
+          [formControl]="editTodoControl"
+          class="edit-input"
+          (keyup.enter)="onUpdateTodo(todo.id)"
+          (keyup.escape)="cancelEdit()"
+        />
+        <div class="edit-actions">
+          <button (click)="onUpdateTodo(todo.id)" class="btn-save">💾 Sauver</button>
+          <button (click)="cancelEdit()" class="btn-cancel">❌ Annuler</button>
+        </div>
       </div>
 
-      <div class="todo-content">
-        <p [class.completed]="todo.completed">{{ todo.title }}</p>
-        <small>
-          👤 {{ getUserName(todo.userId) | async }} • ID: {{ todo.id }}
-        </small>
-      </div>
+      <!-- Mode normal -->
+      <div *ngIf="editingTodoId !== todo.id" class="normal-mode">
+        <div class="todo-checkbox" (click)="onToggleTodo(todo.id)">
+          <span *ngIf="todo.completed" class="checked">✓</span>
+          <span *ngIf="!todo.completed" class="unchecked">○</span>
+        </div>
 
-      <div class="todo-status">
-        <span *ngIf="todo.completed" class="badge-completed">Complété</span>
-        <span *ngIf="!todo.completed" class="badge-active">En cours</span>
+        <div class="todo-content">
+          <p [class.completed]="todo.completed">{{ todo.title }}</p>
+          <small>
+            👤 {{ getUserName(todo.userId) | async }} • ID: {{ todo.id }}
+          </small>
+        </div>
+
+        <div class="todo-actions">
+          <button (click)="startEdit(todo)" class="btn-edit" title="Modifier">
+            ✏️
+          </button>
+          <button (click)="onDeleteTodo(todo.id, todo.title)" class="btn-delete" title="Supprimer">
+            🗑️
+          </button>
+        </div>
+
+        <div class="todo-status">
+          <span *ngIf="todo.completed" class="badge-completed">Complété</span>
+          <span *ngIf="!todo.completed" class="badge-active">En cours</span>
+        </div>
       </div>
     </div>
 
@@ -107,3 +150,4 @@
     </div>
   </div>
 </div>
+

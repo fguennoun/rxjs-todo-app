@@ -47,7 +47,73 @@ export class TodoService {
     );
   }
 
-  // Toggle le statut d'un todo
+  // CREATE - Ajouter un nouveau todo
+  addTodo(title: string, userId: number = 1): Observable<Todo> {
+    const newTodo: Partial<Todo> = {
+      title,
+      userId,
+      completed: false
+    };
+
+    return this.http.post<Todo>(`${this.API_URL}/todos`, newTodo).pipe(
+      tap(todo => {
+        console.log('✅ Todo créé:', todo);
+        // Mise à jour optimiste du state local
+        const todos = this.todosSubject.value;
+        // JSONPlaceholder retourne id=201, on utilise un id local
+        const localTodo = { ...todo, id: todos.length + 1 };
+        this.todosSubject.next([localTodo, ...todos]);
+      }),
+      retry(1),
+      catchError(error => {
+        console.error('❌ Erreur création todo:', error);
+        return throwError(() => new Error('Impossible de créer le todo'));
+      })
+    );
+  }
+
+  // UPDATE - Modifier un todo existant
+  updateTodo(id: number, updates: Partial<Todo>): Observable<Todo> {
+    return this.http.put<Todo>(
+      `${this.API_URL}/todos/${id}`,
+      updates
+    ).pipe(
+      tap(updatedTodo => {
+        console.log('✅ Todo modifié:', updatedTodo);
+        // Mise à jour optimiste du state
+        const todos = this.todosSubject.value;
+        const updated = todos.map(t =>
+          t.id === id ? { ...t, ...updates } : t
+        );
+        this.todosSubject.next(updated);
+      }),
+      retry(1),
+      catchError(error => {
+        console.error('❌ Erreur modification todo:', error);
+        return throwError(() => new Error('Impossible de modifier le todo'));
+      })
+    );
+  }
+
+  // DELETE - Supprimer un todo
+  deleteTodo(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.API_URL}/todos/${id}`).pipe(
+      tap(() => {
+        console.log('🗑️ Todo supprimé:', id);
+        // Mise à jour optimiste du state
+        const todos = this.todosSubject.value;
+        const filtered = todos.filter(t => t.id !== id);
+        this.todosSubject.next(filtered);
+      }),
+      retry(1),
+      catchError(error => {
+        console.error('❌ Erreur suppression todo:', error);
+        return throwError(() => new Error('Impossible de supprimer le todo'));
+      })
+    );
+  }
+
+  // Toggle le statut d'un todo (PATCH)
   toggleTodo(id: number): Observable<Todo> {
     const todos = this.todosSubject.value;
     const todo = todos.find(t => t.id === id);
@@ -61,6 +127,7 @@ export class TodoService {
       { completed: !todo.completed }
     ).pipe(
       tap(() => {
+        console.log('✅ Todo toggled:', id);
         // Mise à jour optimiste du state
         const updated = todos.map(t =>
           t.id === id ? { ...t, completed: !t.completed } : t
